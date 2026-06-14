@@ -4,6 +4,7 @@ import threading
 control = None   # sends commands to server
 data = None      # receives responses from server
 running = True
+last_command = ""  # tracks last command sent to distinguish bare 200 responses
 
 
 def print_response(message):
@@ -18,7 +19,10 @@ def print_response(message):
     if status == "200":
 
         if len(lines) == 1:
-            print("200 status code received.")
+            if last_command.startswith("private"):
+                print("200 status code received. Message sent.")
+            else:
+                print("200 status code received.")
 
         elif len(lines) >= 5 and lines[2] == "Broadcast":
             sender = lines[3]
@@ -35,7 +39,7 @@ def print_response(message):
             print(sender + ": " + text)
 
         elif len(lines) >= 4 and lines[2] == "join":
-            print("200 status code received.")
+            print("200 status code received. Login successful")
 
         elif len(lines) >= 4 and lines[2] == "quit":
             print("200 status code received.")
@@ -109,7 +113,7 @@ def connect_to_server(command):
 
 def main():
     # Read user commands and send them to server
-    global running
+    global running, last_command
 
     print("Starting client...")
 
@@ -126,6 +130,7 @@ def main():
 
         else:
             try:
+                last_command = command
                 control.sendall((command + "\n").encode())
 
                 if command == "quit":
