@@ -23,9 +23,9 @@ server.bind((HOST, PORT))
 server.listen()
 print("Awaiting connections...")
 
-def broadcast(message, skip=None):
+def broadcast(message):
     with clients_lock:
-        targets = [(u, i["data"]) for u, i in clients.items() if u != skip]
+        targets = [(u, i["data"]) for u, i in clients.items()]
 
     for _, sock in targets:
         try:
@@ -74,13 +74,37 @@ def handle_quit(user, data):
         clients.pop(user, None)
     broadcast(f"200\n\nquit\n{user}\n")
     data.sendall("200\n\n".encode())
-def handle_conn():
-    # if login, handle_login
-    # if who, handle_who
-    # if broadcast, handle_broadcast
-    # if private, handle_private
-    # if quit, handle_quit
-    pass
+
+def handle_conn(user, ctrl, data):
+    try:
+        for raw in ctrl.makefile("r"): # Tokenizes input
+            parts = raw.strip().split(" ", 1)
+            cmd = parts[0].lower()
+            args = parts[1]
+        
+            if cmd == "login":
+                user = handle_login(args, ctrl, data)
+            elif cmd == "who":
+                handle_who(data)
+            elif cmd == "broadcast":
+                handle_broadcast(user,args)
+            elif cmd == "private":
+                handle_private(user, args, data)
+            elif cmd == "quit":
+                handle_quit(user, data)
+                break
+    except:
+        pass
+    finally:
+        if user:
+            with clients_lock:
+                clients.pop(user, None)
+            broadcast(f"200\n\nquit\n{user}\n")
+        for s in (data, ctrl):
+            try:
+                s.close()
+            except:
+                pass
 
 def receive():
     while True:
