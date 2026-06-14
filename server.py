@@ -23,7 +23,7 @@ server.bind((HOST, PORT))
 server.listen()
 print("Awaiting connections...")
 
-def broadcast(message):
+def broadcast(message, skip=None):
     with clients_lock:
         targets = [(u, i["data"]) for u, i in clients.items() if u != skip]
 
@@ -43,6 +43,37 @@ def handle_login(args, ctrl, data):
     broadcast(f"200\n\njoin\n{args}\n")
     return args
 
+def handle_who(data):
+    print("Who requested. Sending users.")
+    with clients_lock:
+        ul = ", ".join(clients.keys())
+    data.sendall(f"200\n\n{ul}\n".encode())
+
+def handle_broadcast(user, args):
+    print(f"Broadcast requested by {user}\nMessage: {args}")
+    broadcast(f"200\n\nBroadcast\n{user}\n{args}\n")
+
+def handle_private(user, args, data):
+    p = args.split(" ", 1)
+    if len(p) < 2:
+        data.sendall("500\n\nUsage: private <user> <msg>\n".encode())
+        return
+    recip, msg = p
+    with clients_lock:
+        target = clients.get(recip)
+    if not target:
+        data.sendall("500\n\nUser not found\n".encode())
+        return
+    print(f"Private message from {user} to {recip}")
+    target["data"].sendall(f"200\n\nPrivate\n{user}\n{msg}\n".encode())
+    data.sendall("200\n\n".encode())
+
+def handle_quit(user, data):
+    print(f"Quit requested by {user}")
+    with clients_lock:
+        clients.pop(user, None)
+    broadcast(f"200\n\nquit\n{user}\n")
+    data.sendall("200\n\n".encode())
 def handle_conn():
     # if login, handle_login
     # if who, handle_who
@@ -53,7 +84,7 @@ def handle_conn():
 
 def receive():
     while True:
-        client, addr = server.accept()
+        client, _ = server.accept()
         print("Connection requested. Creating data socket")
 
         ds = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
