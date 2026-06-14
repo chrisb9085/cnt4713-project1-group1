@@ -74,7 +74,7 @@ def handle_conn(user, ctrl, data):
         for raw in ctrl.makefile("r"): # Tokenizing input
             parts = raw.strip().split(" ", 1)
             cmd = parts[0].lower()
-            args = parts[1]
+            args = parts[1] if len(parts) > 1 else ""
         
             if cmd == "login":
                 user = handle_login(args, ctrl, data)
