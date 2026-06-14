@@ -6,20 +6,16 @@ import sys # Needed to read port numbers from command line
 clients_lock = threading.Lock() # Mutex
 clients = {} # username : (control_sock : data_sock)
 
-HOST = "127.0.0.1"
 PORT = int(sys.argv[1])
 
 
-if PORT < 1024:
-    print("Must input a port number greater than 1023.")
-    sys.exit(0)
 
 print("Starting server...")
 print("Creating server socket")
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((HOST, PORT))
+server.bind(("", PORT))
 server.listen()
 print("Awaiting connections...")
 
@@ -112,7 +108,7 @@ def receive():
         print("Connection requested. Creating data socket")
 
         ds = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        ds.bind((HOST, 0))
+        ds.bind(("", 0))
         ds.listen(1)
         data_port = ds.getsockname()[1]
         client.sendall(f"200\n\n{data_port}\n".encode())
