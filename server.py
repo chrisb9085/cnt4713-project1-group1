@@ -86,6 +86,7 @@ def handle_conn(user, ctrl, data):
                 handle_private(user, args, data)
             elif cmd == "quit":
                 handle_quit(user, data)
+                user = None
                 break
     except:
         pass
