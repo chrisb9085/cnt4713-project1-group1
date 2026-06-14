@@ -71,22 +71,26 @@ def handle_quit(user, data):
 
 def handle_conn(user, ctrl, data):
     try:
-        for raw in ctrl.makefile("r"): # Tokenizing input
-            parts = raw.strip().split(" ", 1)
+        while True:
+            raw = ctrl.recv(1024).decode()
+            if not raw:
+                break
+
+            parts = raw.strip().split(" ", 1) # tokenization
             cmd = parts[0].lower()
             args = parts[1] if len(parts) > 1 else ""
-        
+
             if cmd == "login":
                 user = handle_login(args, ctrl, data)
             elif cmd == "who":
                 handle_who(data)
             elif cmd == "broadcast":
-                handle_broadcast(user,args)
+                handle_broadcast(user, args)
             elif cmd == "private":
                 handle_private(user, args, data)
             elif cmd == "quit":
                 handle_quit(user, data)
-                user = None # prevents double broadcast message when quitting
+                user = None # voids the finally block and prevents double 200 message
                 break
     except:
         pass
@@ -95,7 +99,7 @@ def handle_conn(user, ctrl, data):
             with clients_lock:
                 clients.pop(user, None)
             broadcast(f"200\n\nquit\n{user}\n")
-        for s in (data, ctrl): # Close sockets
+        for s in (data, ctrl): # close sockets
             try:
                 s.close()
             except:
