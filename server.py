@@ -86,11 +86,11 @@ def handle_conn(user, ctrl, data):
                 handle_private(user, args, data)
             elif cmd == "quit":
                 handle_quit(user, data)
-                user = None
+                user = None # prevents double broadcast message when quitting
                 break
     except:
         pass
-    finally:
+    finally: # handles crashes
         if user:
             with clients_lock:
                 clients.pop(user, None)
