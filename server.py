@@ -33,8 +33,22 @@ def broadcast(message):
         except:
             pass
 
+def handle_login(args, ctrl, data):
+    with clients_lock:
+        if args in clients:
+            data.sendall("500\n\nUsername taken\n".encode())
+            return None
+        clients[args] = {"control": ctrl, "data": data}
+    print(f"Login requested by: {args}")
+    broadcast(f"200\n\njoin\n{args}\n")
+    return args
+
 def handle_conn():
-    
+    # if login, handle_login
+    # if who, handle_who
+    # if broadcast, handle_broadcast
+    # if private, handle_private
+    # if quit, handle_quit
     pass
 
 def receive():
